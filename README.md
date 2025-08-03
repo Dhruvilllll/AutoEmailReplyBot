@@ -63,3 +63,4 @@ Dhruvil Malvania
 
 B.Tech CSE @ Gandhinagar University | AI/ML & Data Science Enthusiast
 
+![Telegram3](https://github.com/user-attachments/assets/8eba44fe-06b6-4f94-8fbe-4784da721f42)
