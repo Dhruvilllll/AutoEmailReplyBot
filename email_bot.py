@@ -2,6 +2,7 @@
 import os
 import base64
 import time
+import json
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 
@@ -20,35 +21,29 @@ CURRENT_EMAIL = {}
 
 def gmail_authenticate():
     creds = None
-    from pathlib import Path
-
-    creds_path = Path("credentials.json")
-    if not creds_path.exists():
-        base64_creds = os.getenv("GMAIL_CREDENTIALS_BASE64")
-        if base64_creds:
-            decoded_creds = base64.b64decode(base64_creds).decode("utf-8")
-            creds_path.write_text(decoded_creds)
-            print("✅ credentials.json created from environment variable.")
-        else:
-            print("❌ GMAIL_CREDENTIALS_BASE64 not set.")
-            return None
-
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     else:
-        flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+        creds_b64 = os.getenv("GMAIL_CREDENTIALS_BASE64")
+        if not creds_b64:
+            raise ValueError("Missing GMAIL_CREDENTIALS_BASE64")
+        creds_data = json.loads(base64.b64decode(creds_b64))
+        flow = InstalledAppFlow.from_client_config(creds_data, SCOPES)
         creds = flow.run_local_server(port=0)
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
-
+        with open("token.json", "w") as token_file:
+            token_file.write(creds.to_json())
     return build('gmail', 'v1', credentials=creds)
 
+
 async def generate_gpt_reply(tone, sender, subject, snippet):
-    prompt = f"""You are Dhruvil Malvania, a motivated and approachable B.Tech Computer Science Engineering student.
-Write a {tone} reply. ALWAYS end with:
-Best regards,
-Dhruvil Malvania
-No [YOUR_NAME] placeholders."""
+    prompt = f"""You are Dhruvil Malvania, a highly motivated and approachable B.Tech Computer Science Engineering student at Gandhinagar University, graduating in 2027. 
+You write email replies based on the tone: Professional, Casual, Friendly. 
+ALWAYS end the email with:
+"Best regards,
+Dhruvil Malvania"
+
+Make sure to replace any placeholders like [YOUR_NAME] with your actual name.
+Now draft a {tone} email reply to the following message:"""
 
     from openai import AsyncOpenAI
     client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
